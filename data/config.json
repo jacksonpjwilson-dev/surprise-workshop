@@ -2,7 +2,7 @@
   "rotationWindow": 3,
   "similarityThreshold": 0.34,
   "previewPort": 4173,
-  "baseUrl": "",
+  "baseUrl": "https://jacksonpjwilson-dev.github.io/surprise-workshop",
   "maxBytes": 2000000,
   "bannedThemes": ["escape room", "escape-room", "murder", "mystery", "whodunit", "detective", "quiz", "trivia"],
   "pg13Blocklist": ["fuck", "shit", "cunt", "nigger", "faggot", "porn", "nude", "naked", "gore"]
