@@ -1,0 +1,109 @@
+{
+  "folder": "2026-10-30-the-pixel-reef",
+  "browser": "chromium",
+  "checkedAt": "2026-10-30T16:46:50.222Z",
+  "passed": true,
+  "failed": 0,
+  "results": [
+    {
+      "name": "meta.json has id, title, date, category, tags, blurb",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "folder name is YYYY-MM-DD-slug and matches meta.id",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "self-contained size under 2.0 MB",
+      "pass": true,
+      "detail": "34.1 KB in 4 files"
+    },
+    {
+      "name": "no external resources or network calls in the source (no CDNs, APIs, fonts, trackers)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no API keys or secrets",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no contact/sending mechanisms (mailto, tel, sms, beacons, form posts)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "PG-13 word screen",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "not an excluded theme (escape room, murder mystery, quiz, trivia)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[desktop] page loads (HTTP 200)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[desktop] has a title, content and a viewport meta tag",
+      "pass": true,
+      "detail": "title=\"The Pixel Reef\""
+    },
+    {
+      "name": "[desktop] no horizontal overflow (1280px ≤ 1280px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[desktop] invention test.js interactions",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[desktop] no external requests attempted",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[desktop] no JavaScript errors",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[mobile-390] page loads (HTTP 200)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[mobile-390] has a title, content and a viewport meta tag",
+      "pass": true,
+      "detail": "title=\"The Pixel Reef\""
+    },
+    {
+      "name": "[mobile-390] no horizontal overflow (390px ≤ 390px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[mobile-390] invention test.js interactions",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[mobile-390] no external requests attempted",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "[mobile-390] no JavaScript errors",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

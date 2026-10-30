@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Pixel Reef</title>
+<meta name="description" content="An 8-bit aquarium where every fish, frond and bubble follows a rule you can rewrite while it runs.">
+<style>
+:root{--bg:#0b0f1e;--panel:#141a33;--line:#2a3566;--ink:#e8ecff;--dim:#8f9bd0;--hot:#ffcc33;--ok:#4ee59a;--pink:#ff77a8}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+a{color:var(--dim)}
+.wrap{max-width:1180px;margin:0 auto;padding:12px 14px 40px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:10px}
+header a{font-size:13px;text-decoration:none}
+h1{margin:0;font-size:clamp(22px,5vw,34px);letter-spacing:.12em;color:var(--hot);text-shadow:3px 3px 0 #b8325a,6px 6px 0 #1d2b53}
+.sub{color:var(--dim);font-size:13px;flex-basis:100%}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr)}}
+.tank{position:relative;border:4px solid #3b4a8a;border-radius:6px;box-shadow:0 0 0 4px #0f1430,0 0 40px #1b6fd833;background:#06142c;overflow:hidden}
+.tank canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;cursor:crosshair}
+.tank::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.tank.glitch canvas{animation:gl .45s steps(4) 1}
+@keyframes gl{0%{filter:hue-rotate(0) contrast(1)}25%{filter:hue-rotate(90deg) contrast(1.6);transform:translateX(3px)}50%{filter:hue-rotate(200deg) invert(.2);transform:translateX(-4px)}100%{filter:none;transform:none}}
+.hud{position:absolute;left:6px;top:6px;right:6px;display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:#fff;text-shadow:1px 1px 0 #000;pointer-events:none}
+.hud b{color:var(--hot);font-weight:700}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+button{font:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:4px;padding:7px 10px;min-height:38px;cursor:pointer;box-shadow:0 3px 0 #070a18}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 #070a18}
+button[aria-pressed="true"]{border-color:var(--hot);color:var(--hot)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.sw{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;box-shadow:inset 0 0 0 1px #0006}
+.tools button{flex:1 1 auto}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:10px 12px}
+.panel h2{margin:0 0 4px;font-size:14px;letter-spacing:.1em;color:var(--ok)}
+.panel p.hint{margin:0 0 10px;color:var(--dim);font-size:12px}
+.rule{padding:7px 0;border-top:1px dashed var(--line)}
+.rule code{display:block;font-size:12.5px;color:#c9d2ff;white-space:normal}
+.rule code .k{color:var(--pink)} .rule code .t{color:var(--hot)} .rule code .v{color:var(--ok);font-weight:700}
+.rule label{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px;color:var(--dim)}
+.rule input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
+.rule input[type=checkbox]{accent-color:var(--hot);width:18px;height:18px}
+.spark{display:block;width:100%;height:46px;margin-top:10px;image-rendering:pixelated;background:#0b1026;border:1px solid var(--line)}
+.legend{font-size:11px;color:var(--dim);display:flex;gap:12px;margin-top:3px}
+footer{margin-top:16px;color:var(--dim);font-size:12px}
+@media (max-width:480px){button{padding:6px 8px;font-size:12px}.wrap{padding:10px 10px 32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a href="../../">← Gallery</a>
+  <h1>THE PIXEL REEF</h1>
+  <div class="sub">An 8-bit aquarium. Every fish, frond and bubble follows a rule, and you can rewrite the rules while it runs. Tap or drag on the tank to paint.</div>
+</header>
+<div class="layout">
+  <section>
+    <div class="tank" id="tankWrap">
+      <canvas id="tank" aria-label="Aquarium simulation. Tap or drag to paint with the selected tool."></canvas>
+      <div class="hud" aria-live="off"><span>GEN <b id="gen">0</b></span><span>FISH <b id="nFish">0</b></span><span>KELP <b id="nKelp">0</b></span><span>BUBBLES <b id="nBub">0</b></span><span>EGGS <b id="nEgg">0</b></span></div>
+    </div>
+    <div class="bar tools" role="toolbar" aria-label="Paint tools" id="tools"></div>
+    <div class="bar" role="toolbar" aria-label="Simulation controls">
+      <button id="play" aria-label="Pause">❚❚ Pause</button>
+      <button id="step" title="Advance one generation">Step</button>
+      <button id="speed" title="Simulation speed">Speed 1×</button>
+      <button id="glitch" title="Scramble every rule">⚡ Glitch rules</button>
+      <button id="reset" title="Start a fresh reef">Reset reef</button>
+      <button id="sound" aria-pressed="false" title="Chiptune blips">🔇 Sound off</button>
+    </div>
+  </section>
+  <aside class="panel" aria-label="Rules">
+    <h2>RULEBOOK.BAS</h2>
+    <p class="hint">These are the reef's laws of physics. Move a slider and the whole tank obeys at once.</p>
+    <div id="rules"></div>
+    <canvas class="spark" id="spark" width="240" height="46" aria-label="Population graph"></canvas>
+    <div class="legend"><span style="color:#ffa300">■ fish</span><span style="color:#00e436">■ kelp</span><span style="color:#ff77a8">■ eggs</span></div>
+  </aside>
+</div>
+<footer>Made by Grok Bot for Jackson. It runs offline and has no trackers.</footer>
+</div>
+<script>
+(() => {
+'use strict';
+// ---------- palette (PICO-8-ish) ----------
+const PAL = {k:'#000000',n:'#1d2b53',p:'#7e2553',G:'#008751',b:'#ab5236',d:'#5f574f',l:'#c2c3c7',w:'#fff1e8',r:'#ff004d',o:'#ffa300',y:'#ffec27',g:'#00e436',c:'#29adff',v:'#83769c',m:'#ff77a8',s:'#ffccaa'};
+const FISH_COLORS = ['o','y','c','m','r','s'];
+// cell types
+const W=0,SAND=1,ROCK=2,KELP=3,FISH=4,BUB=5,FOOD=6,EGG=7,VENT=8,SEED=9;
+const S = 8; // sprite pixels per cell
+
+// ---------- rules (editable live) ----------
+const RULES = [
+  {key:'kelpGrow', type:'pct', min:0, max:30, v:7, code:'<span class="k">IF</span> <span class="t">KELP</span> tip <span class="k">AND</span> water above <span class="k">THEN</span> grow, chance <span class="v">{v}%</span>'},
+  {key:'kelpMax', type:'int', min:2, max:40, v:13, code:'<span class="t">KELP</span> never grows taller than <span class="v">{v}</span> cells'},
+  {key:'kelpSeed', type:'pct', min:0, max:3, step:.1, v:.4, code:'<span class="t">KELP</span> tip drops a <span class="t">SEED</span>, chance <span class="v">{v}%</span>'},
+  {key:'ventRate', type:'pct', min:0, max:60, v:14, code:'<span class="t">VENT</span> puffs a <span class="t">BUBBLE</span> upward, chance <span class="v">{v}%</span>'},
+  {key:'wobble', type:'pct', min:0, max:100, v:30, code:'<span class="t">BUBBLE</span> wobbles sideways as it rises, chance <span class="v">{v}%</span>'},
+  {key:'swim', type:'pct', min:0, max:100, v:65, code:'<span class="t">FISH</span> swims forward each tick, chance <span class="v">{v}%</span>'},
+  {key:'sight', type:'int', min:0, max:12, v:6, code:'<span class="k">IF</span> hungry <span class="t">FISH</span> sees <span class="t">FOOD</span> within <span class="v">{v}</span> <span class="k">THEN</span> chase it'},
+  {key:'school', type:'pct', min:0, max:100, v:25, code:'<span class="t">FISH</span> copies a neighbour\'s heading, chance <span class="v">{v}%</span>'},
+  {key:'metab', type:'pct', min:0, max:100, v:45, code:'<span class="t">FISH</span> burns 1 energy per tick, chance <span class="v">{v}%</span>'},
+  {key:'nibble', type:'bool', v:true, code:'<span class="k">IF</span> hungry <span class="t">FISH</span> reaches <span class="t">KELP</span> <span class="k">THEN</span> take a bite: <span class="v">{v}</span>'},
+  {key:'breed', type:'int', min:60, max:250, v:150, code:'<span class="k">IF</span> <span class="t">FISH</span> energy &gt; <span class="v">{v}</span> <span class="k">THEN</span> lay an <span class="t">EGG</span>'},
+  {key:'hatch', type:'int', min:10, max:300, v:70, code:'<span class="t">EGG</span> hatches after <span class="v">{v}</span> ticks'},
+  {key:'maxFish', type:'int', min:1, max:120, v:45, code:'The reef holds at most <span class="v">{v}</span> fish'},
+  {key:'rot', type:'int', min:20, max:600, v:220, code:'<span class="t">FOOD</span> dissolves after <span class="v">{v}</span> ticks'},
+  {key:'gravity', type:'bool', v:true, code:'<span class="t">SAND</span>, <span class="t">FOOD</span> and <span class="t">EGGS</span> fall: <span class="v">{v}</span>'},
+];
+const R = {}; RULES.forEach(r => R[r.key] = r.v);
+
+// ---------- grid ----------
+let COLS, ROWS, N, type, dir, energy, age, col, stamp, tick = 0;
+const cv = document.getElementById('tank'), ctx = cv.getContext('2d');
+const rnd = Math.random, chance = p => rnd() * 100 < p;
+function alloc() {
+  const narrow = (document.getElementById('tankWrap').clientWidth || innerWidth) < 600;
+  COLS = narrow ? 34 : 58; ROWS = narrow ? 40 : 38; N = COLS * ROWS;
+  type = new Uint8Array(N); dir = new Int8Array(N); energy = new Int16Array(N); age = new Uint16Array(N); col = new Uint8Array(N); stamp = new Uint32Array(N);
+  cv.width = COLS * S; cv.height = ROWS * S;
+  buildWater();
+}
+const idx = (x, y) => y * COLS + x;
+const inb = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
+function put(i, t, c) { type[i] = t; age[i] = 0; energy[i] = t === FISH ? 110 : 0; dir[i] = rnd() < .5 ? -1 : 1; col[i] = c ?? (rnd() * FISH_COLORS.length | 0); }
+function swap(i, j) {
+  let t;
+  t = type[i]; type[i] = type[j]; type[j] = t;
+  t = dir[i]; dir[i] = dir[j]; dir[j] = t;
+  t = energy[i]; energy[i] = energy[j]; energy[j] = t;
+  t = age[i]; age[i] = age[j]; age[j] = t;
+  t = col[i]; col[i] = col[j]; col[j] = t;
+  stamp[i] = stamp[j] = tick;
+}
+const edible = j => type[j] === KELP && j + COLS < N && type[j + COLS] === KELP; // the holdfast (bottom cell) is never eaten, so kelp always regrows
+const solid = t => t === SAND || t === ROCK || t === KELP || t === VENT;
+
+function seedReef() {
+  type.fill(0); tick = 0; history.length = 0;
+  // sand dunes
+  const base = ROWS - 3; let h = 2 + rnd() * 2;
+  for (let x = 0; x < COLS; x++) {
+    h += (rnd() - .5) * 1.1; h = Math.max(1.5, Math.min(5, h));
+    for (let y = Math.round(base - h + 3); y < ROWS; y++) put(idx(x, y), SAND);
+  }
+  // rock piles + vents
+  const piles = Math.max(2, COLS / 22 | 0), tops = [];
+  for (let p = 0; p < piles; p++) {
+    const cx = 4 + (rnd() * (COLS - 8) | 0), w = 3 + (rnd() * 4 | 0), ht = 2 + (rnd() * 4 | 0);
+    for (let dy = 0; dy < ht; dy++) for (let dx = -w + dy; dx <= w - dy; dx++) {
+      const x = cx + dx; if (!inb(x, 0)) continue;
+      let y = 0; while (y < ROWS && !solid(type[idx(x, y)])) y++;
+      if (y - 1 >= 0 && rnd() < .9) put(idx(x, y - 1), ROCK);
+    }
+    tops.push(cx);
+  }
+  // vents go on top of each pile once every pile is built, so none get buried
+  for (const cx of tops) { let y = 0; while (y < ROWS && !solid(type[idx(cx, y)])) y++; if (y - 1 > 2) put(idx(cx, y - 1), VENT); }
+  // kelp
+  for (let k = 0; k < Math.max(6, COLS / 5 | 0); k++) {
+    const x = 1 + (rnd() * (COLS - 2) | 0); let y = 0; while (y < ROWS && type[idx(x, y)] === W) y++;
+    const tall = 2 + (rnd() * 7 | 0);
+    for (let t = 1; t <= tall && y - t > 3; t++) put(idx(x, y - t), KELP);
+  }
+  // fish
+  for (let f = 0; f < Math.max(9, COLS / 4 | 0); f++) {
+    for (let tries = 0; tries < 30; tries++) { const i = idx(rnd() * COLS | 0, 3 + (rnd() * (ROWS * .6) | 0)); if (type[i] === W) { put(i, FISH); energy[i] = 80 + (rnd() * 60 | 0); break; } }
+  }
+  draw(); stats(true);
+}
+
+// ---------- simulation ----------
+let order = null;
+function shuffle() { if (!order || order.length !== N) order = Uint32Array.from({length: N}, (_, i) => i); for (let i = N - 1; i > 0; i--) { const j = rnd() * (i + 1) | 0; const t = order[i]; order[i] = order[j]; order[j] = t; } }
+let fishCount = 0;
+function step() {
+  tick++; shuffle();
+  fishCount = 0; for (let i = 0; i < N; i++) if (type[i] === FISH || type[i] === EGG) fishCount++;
+  for (let n = 0; n < N; n++) {
+    const i = order[n]; if (stamp[i] === tick) continue;
+    const t = type[i]; if (t === W || t === ROCK || t === SAND && !R.gravity) continue;
+    const x = i % COLS, y = (i / COLS) | 0;
+    switch (t) {
+      case SAND: fall(i, x, y, true); break;
+      case FOOD: age[i]++; if (age[i] > R.rot) { type[i] = W; break; } if (rnd() < .7) fall(i, x, y, true); break;
+      case SEED: age[i]++;
+        if (y + 1 < ROWS && (type[idx(x, y + 1)] === SAND || type[idx(x, y + 1)] === ROCK)) { type[i] = KELP; break; }
+        if (age[i] > 400) { type[i] = W; break; }
+        if (!fall(i, x, y, false) && rnd() < .3) drift(i, x, y); break;
+      case EGG: age[i]++; if (age[i] > R.hatch) { const c = col[i]; put(i, FISH, c); energy[i] = 70; blip('hatch'); break; } fall(i, x, y, false); break;
+      case BUB: bubble(i, x, y); break;
+      case VENT: if (y > 0 && type[idx(x, y - 1)] === W && chance(R.ventRate)) { put(idx(x, y - 1), BUB); stamp[idx(x, y - 1)] = tick; } break;
+      case KELP: kelp(i, x, y); break;
+      case FISH: fish(i, x, y); break;
+    }
+  }
+  stats();
+}
+function fall(i, x, y, slide) {
+  if (!R.gravity || y + 1 >= ROWS) return false;
+  const b = idx(x, y + 1);
+  if (type[b] === W || type[b] === BUB) { swap(i, b); return true; }
+  if (slide) { const s = rnd() < .5 ? -1 : 1;
+    for (const d of [s, -s]) if (inb(x + d, y + 1) && type[idx(x + d, y + 1)] === W && type[idx(x + d, y)] === W) { swap(i, idx(x + d, y + 1)); return true; } }
+  return false;
+}
+function drift(i, x, y) { const d = rnd() < .5 ? -1 : 1; if (inb(x + d, y) && type[idx(x + d, y)] === W) swap(i, idx(x + d, y)); }
+function bubble(i, x, y) {
+  age[i]++;
+  if (y === 0 || age[i] > 300) { type[i] = W; if (y === 0) blip('pop'); return; }
+  let tx = x; if (chance(R.wobble)) tx += rnd() < .5 ? -1 : 1;
+  for (const cx of [tx, x, x - 1, x + 1]) { if (!inb(cx, y - 1)) continue; const j = idx(cx, y - 1); if (type[j] === W) { swap(i, j); return; } if (type[j] === BUB) return; }
+}
+function kelp(i, x, y) {
+  const below = y + 1 < ROWS ? type[idx(x, y + 1)] : ROCK;
+  if (!(below === SAND || below === ROCK || below === KELP || below === VENT)) { type[i] = FOOD; age[i] = 0; return; } // a loose frond becomes food
+  if (y === 0 || type[idx(x, y - 1)] === KELP) return; // only tips act
+  let h = 1; for (let yy = y + 1; yy < ROWS && type[idx(x, yy)] === KELP; yy++) h++;
+  const up = idx(x, y - 1);
+  if (type[up] === W && h < R.kelpMax && chance(R.kelpGrow / 4)) { put(up, KELP); stamp[up] = tick; }
+  else if (h > 2 && chance(R.kelpSeed / 4)) { const d = rnd() < .5 ? -1 : 1; if (inb(x + d, y) && type[idx(x + d, y)] === W) { put(idx(x + d, y), SEED); stamp[idx(x + d, y)] = tick; } }
+}
+function fish(i, x, y) {
+  age[i] = Math.min(65000, age[i] + 1);
+  if (chance(R.metab)) energy[i]--;
+  if (energy[i] <= 0 || age[i] > 6000) { type[i] = FOOD; age[i] = 0; return; } // circle of life
+  // schooling
+  if (chance(R.school)) { const nx = x + (rnd() * 5 | 0) - 2, ny = y + (rnd() * 5 | 0) - 2; if (inb(nx, ny) && type[idx(nx, ny)] === FISH) dir[i] = dir[idx(nx, ny)]; }
+  // breed
+  if (energy[i] > R.breed && fishCount < R.maxFish) {
+    for (const [dx, dy] of [[0, 1], [-dir[i], 0], [0, -1]]) { if (!inb(x + dx, y + dy)) continue; const j = idx(x + dx, y + dy);
+      if (type[j] === W) { put(j, EGG, col[i]); stamp[j] = tick; energy[i] -= 70; fishCount++; break; } }
+  }
+  if (!chance(R.swim)) return;
+  let dy = 0;
+  if (energy[i] < 120 && R.sight > 0) { // hunt: food first, kelp if nibbling is allowed
+    let best = 1e9, bx = 0, by = 0; const r = R.sight, kelpOk = R.nibble && energy[i] < 100;
+    for (let yy = Math.max(0, y - r); yy <= Math.min(ROWS - 1, y + r); yy++) for (let xx = Math.max(0, x - r); xx <= Math.min(COLS - 1, x + r); xx++) {
+      const tt = type[idx(xx, yy)]; if (tt !== FOOD && !(kelpOk && edible(idx(xx, yy)))) continue;
+      const d = Math.abs(xx - x) + Math.abs(yy - y) + (tt === KELP ? 3 : 0); if (d < best) { best = d; bx = xx; by = yy; } }
+    if (best < 1e9) { if (bx !== x) dir[i] = bx > x ? 1 : -1; dy = Math.sign(by - y);
+      if (bx === x && dy) { const j = idx(x, y + dy); if (type[j] === FOOD) { eat(i, j, 55); return; } if (kelpOk && edible(j)) { eat(i, j, 30); return; } } }
+  }
+  if (!dy && rnd() < .18) dy = rnd() < .5 ? -1 : 1;
+  if (y + dy < 1) dy = 1; // stay just under the surface
+  const tx = x + dir[i], ty = y + dy;
+  if (!inb(tx, ty)) { dir[i] = -dir[i]; return; }
+  const j = idx(tx, ty), tt = type[j];
+  if (tt === W) { swap(i, j); return; }
+  if (tt === FOOD) { eat(i, j, 55); return; }
+  if (tt === KELP && R.nibble && energy[i] < 100 && edible(j)) { eat(i, j, 30); return; } // a bite snaps the frond; the loose part drifts down as food
+  if (dy && inb(x + dir[i], y) && type[idx(x + dir[i], y)] === W) { swap(i, idx(x + dir[i], y)); return; }
+  dir[i] = -dir[i];
+}
+function eat(i, j, val) { type[j] = W; energy[i] = Math.min(300, energy[i] + val); blip('eat'); }
+
+// ---------- rendering ----------
+const sprites = {};
+function spr(rows, map = {}) {
+  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '.') return; const m = map[ch] || ch; g.fillStyle = PAL[m] || m; g.fillRect(x, y, 1, 1); }));
+  return c;
+}
+const FISH_R = ['........','...XX...','X.XXXX..','XXXXXXkX','XXXXXXXX','X.XXXX..','...XX...','........'];
+const mirror = rows => rows.map(r => [...r].reverse().join(''));
+function buildSprites() {
+  FISH_COLORS.forEach((fc, n) => { sprites['fR' + n] = spr(FISH_R, {X: fc}); sprites['fL' + n] = spr(mirror(FISH_R), {X: fc}); });
+  sprites.kelpA = spr(['...gg...','..gG....','..gg....','...gg...','....gG..','....gg..','...gg...','..Gg....']);
+  sprites.kelpB = spr(['....gg..','...gG...','...gg...','..gg....','..Gg....','...gg...','....gg..','...gG...']);
+  sprites.kelpTip = spr(['...g....','..ggg...','.gGg.g..','..gg.gg.','...gGg..','...gg...','..gg....','..Gg....']);
+  sprites.bub = spr(['........','...cc...','..c..c..','.c.w..c.','.c....c.','..c..c..','...cc...','........']);
+  sprites.food = spr(['........','........','..b.....','.....s..','...b....','.s....b.','....s...','........']);
+  sprites.egg = spr(['........','........','..mm....','.mwmm...','.mmmm.m.','..mm.mwm','.....mm.','........']);
+  sprites.seed = spr(['........','........','...G....','..gyg...','...G....','........','........','........']);
+  sprites.vent = spr(['dd.kk.dd','d.kkkk.d','ddkkkkdd','ddd..ddd','dldddldd','dddddddd','ddlddddl','dddddddd']);
+  sprites.rock = [0, 1, 2].map(v => spr(['ldddddld','dddldddd','dddddldd','dldddddd','ddddddld','dddldddd','ldddddvd','dddddddd'].map(r => v ? [...r].map((c, k) => (k + v) % 5 === 0 && c === 'd' ? 'v' : c).join('') : r)));
+  sprites.sand = [0, 1, 2, 3].map(v => spr(['ssssssss','ssbsssss','ssssssbs','ssssssss','sbssssss','sssssbss','ssssssss','sssbssss'].map((r, y) => y % 4 === v ? r.replace(/s/g, (m, k) => k % 3 === 0 ? 'o' : 's') : r), {s: '#e4b37a', o: '#d39b5f', b: '#b07a45'}));
+}
+let water;
+function buildWater() {
+  water = document.createElement('canvas'); water.width = cv.width; water.height = cv.height; const g = water.getContext('2d');
+  const bands = ['#2a7bd6', '#2468c0', '#1e58aa', '#1a4a96', '#163d80', '#13336d', '#102a5c', '#0d224d'];
+  const bh = cv.height / bands.length;
+  bands.forEach((c, n) => { g.fillStyle = c; g.fillRect(0, n * bh, cv.width, bh + 1); });
+  // ordered dither between bands
+  for (let n = 1; n < bands.length; n++) { g.fillStyle = bands[n]; const y0 = n * bh - 4; for (let y = 0; y < 4; y++) for (let x = (y % 2); x < cv.width; x += 2) if ((x + y * 3) % 4 < 2 - (y > 1)) g.fillRect(x, y0 + y, 1, 1); }
+  g.fillStyle = '#7fd3ff55'; g.fillRect(0, 0, cv.width, 2);
+}
+function draw() {
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(water, 0, 0);
+  // god rays drifting
+  ctx.globalAlpha = .07; ctx.fillStyle = '#d8f3ff';
+  for (let r = 0; r < 4; r++) { const x0 = ((r * 173 + tick * .6) % (cv.width + 200)) - 100; ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + 34, 0); ctx.lineTo(x0 - 60, cv.height); ctx.lineTo(x0 - 120, cv.height); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  const sway = (tick >> 3) & 1;
+  for (let i = 0; i < N; i++) {
+    const t = type[i]; if (!t) continue;
+    const x = (i % COLS) * S, y = ((i / COLS) | 0) * S; let s;
+    switch (t) {
+      case SAND: s = sprites.sand[(i * 7 + (i / COLS | 0)) % 4]; break;
+      case ROCK: s = sprites.rock[(i * 13) % 3]; break;
+      case KELP: s = (i < COLS || type[i - COLS] !== KELP) ? sprites.kelpTip : (((i / COLS | 0) + sway) & 1 ? sprites.kelpA : sprites.kelpB); break;
+      case FISH: s = sprites[(dir[i] > 0 ? 'fR' : 'fL') + col[i]]; break;
+      case BUB: s = sprites.bub; break; case FOOD: s = sprites.food; break; case EGG: s = sprites.egg; break;
+      case VENT: s = sprites.vent; break; case SEED: s = sprites.seed; break;
+    }
+    ctx.drawImage(s, x, y);
+  }
+}
+
+// ---------- stats + sparkline ----------
+const history = [];
+const $ = id => document.getElementById(id);
+let last = {};
+function stats(force) {
+  const c = {fish: 0, kelp: 0, bub: 0, egg: 0, food: 0};
+  for (let i = 0; i < N; i++) { const t = type[i]; if (t === FISH) c.fish++; else if (t === KELP) c.kelp++; else if (t === BUB) c.bub++; else if (t === EGG) c.egg++; else if (t === FOOD) c.food++; }
+  last = c;
+  $('gen').textContent = tick; $('nFish').textContent = c.fish; $('nKelp').textContent = c.kelp; $('nBub').textContent = c.bub; $('nEgg').textContent = c.egg;
+  if (force || tick % 6 === 0) { history.push([c.fish, c.kelp, c.egg]); if (history.length > 120) history.shift(); spark(); }
+}
+function spark() {
+  const sc = $('spark'), g = sc.getContext('2d'); g.fillStyle = '#0b1026'; g.fillRect(0, 0, sc.width, sc.height);
+  const mx = Math.max(10, ...history.map(h => Math.max(h[0] * 3, h[1], h[2] * 3)));
+  [['#ffa300', 0, 3], ['#00e436', 1, 1], ['#ff77a8', 2, 3]].forEach(([c, k, mul]) => { g.fillStyle = c;
+    history.forEach((h, n) => { const v = Math.round((h[k] * mul / mx) * (sc.height - 4)); g.fillRect(n * 2, sc.height - 2 - v, 2, 2); }); });
+}
+
+// ---------- sound (only after a tap, off by default) ----------
+let ac = null, soundOn = false, blipBudget = 0;
+function blip(kind) {
+  if (!soundOn || !ac || blipBudget <= 0) return; blipBudget--;
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+  const f = {pop: 880 + rnd() * 600, eat: 330, hatch: 523}[kind]; o.type = kind === 'pop' ? 'sine' : 'square';
+  o.frequency.setValueAtTime(f, t); if (kind === 'hatch') { o.frequency.setValueAtTime(659, t + .06); o.frequency.setValueAtTime(784, t + .12); }
+  if (kind === 'eat') o.frequency.exponentialRampToValueAtTime(160, t + .08);
+  g.gain.setValueAtTime(.04, t); g.gain.exponentialRampToValueAtTime(.0005, t + (kind === 'hatch' ? .22 : .09));
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + .25);
+}
+$('sound').onclick = () => {
+  soundOn = !soundOn;
+  if (soundOn && !ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch { soundOn = false; } }
+  if (ac && ac.state === 'suspended') ac.resume();
+  $('sound').setAttribute('aria-pressed', soundOn); $('sound').textContent = soundOn ? '🔊 Sound on' : '🔇 Sound off';
+};
+
+// ---------- tools / painting ----------
+const TOOLS = [
+  {id: 'food', label: 'Food', sw: '#ab5236'}, {id: 'fish', label: 'Fish', sw: '#ffa300'}, {id: 'seed', label: 'Kelp seed', sw: '#00e436'},
+  {id: 'sand', label: 'Sand', sw: '#e4b37a'}, {id: 'rock', label: 'Rock', sw: '#5f574f'}, {id: 'vent', label: 'Vent', sw: '#000'}, {id: 'erase', label: 'Eraser', sw: '#2468c0'},
+];
+let tool = 'food';
+const tb = $('tools');
+TOOLS.forEach(t => { const b = document.createElement('button'); b.dataset.tool = t.id; b.setAttribute('aria-pressed', t.id === tool);
+  b.innerHTML = `<span class="sw" style="background:${t.sw}"></span>${t.label}`; b.onclick = () => { tool = t.id; tb.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); }; tb.appendChild(b); });
+function paint(cx, cy) {
+  const area = (r, fn) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (inb(cx + dx, cy + dy) && dx * dx + dy * dy <= r * r + 1) fn(idx(cx + dx, cy + dy)); };
+  switch (tool) {
+    case 'food': area(1, i => { if (type[i] === W && rnd() < .45) put(i, FOOD); }); break;
+    case 'fish': if (inb(cx, cy) && type[idx(cx, cy)] === W) put(idx(cx, cy), FISH); break;
+    case 'seed': if (inb(cx, cy) && type[idx(cx, cy)] === W) put(idx(cx, cy), SEED); break;
+    case 'sand': area(1, i => { if (type[i] === W) put(i, SAND); }); break;
+    case 'rock': area(1, i => { if (type[i] === W || type[i] === SAND) put(i, ROCK); }); break;
+    case 'vent': if (inb(cx, cy)) put(idx(cx, cy), VENT); break;
+    case 'erase': area(2, i => { type[i] = W; }); break;
+  }
+  draw(); stats();
+}
+let painting = false, lastCell = -1;
+function cellAt(e) { const r = cv.getBoundingClientRect(); return [Math.floor((e.clientX - r.left) / r.width * COLS), Math.floor((e.clientY - r.top) / r.height * ROWS)]; }
+cv.addEventListener('pointerdown', e => { painting = true; cv.setPointerCapture?.(e.pointerId); const [x, y] = cellAt(e); lastCell = idx(x, y); paint(x, y); e.preventDefault(); });
+cv.addEventListener('pointermove', e => { if (!painting) return; const [x, y] = cellAt(e); const c = idx(x, y); if (c === lastCell) return; lastCell = c; paint(x, y); });
+addEventListener('pointerup', () => painting = false); addEventListener('pointercancel', () => painting = false);
+
+// ---------- rule editor ----------
+const rulesEl = $('rules');
+function fmt(r, v) { return r.type === 'bool' ? (v ? 'ON' : 'OFF') : (r.step && r.step < 1 ? (+v).toFixed(1) : v); }
+RULES.forEach(r => {
+  const d = document.createElement('div'); d.className = 'rule';
+  const code = document.createElement('code'); const lab = document.createElement('label');
+  const inp = document.createElement('input'); inp.id = 'rule-' + r.key; inp.dataset.rule = r.key;
+  if (r.type === 'bool') { inp.type = 'checkbox'; inp.checked = r.v; lab.append(inp, document.createTextNode(' enabled')); }
+  else { inp.type = 'range'; inp.min = r.min; inp.max = r.max; inp.step = r.step || 1; inp.value = r.v; lab.append(inp); }
+  inp.setAttribute('aria-label', code.textContent);
+  const render = () => { code.innerHTML = r.code.replace('{v}', fmt(r, R[r.key])); inp.setAttribute('aria-label', code.textContent); };
+  inp.addEventListener('input', () => { R[r.key] = r.type === 'bool' ? inp.checked : +inp.value; render(); });
+  r.sync = () => { if (r.type === 'bool') inp.checked = R[r.key]; else inp.value = R[r.key]; render(); };
+  render(); d.append(code, lab); rulesEl.append(d);
+});
+$('glitch').onclick = () => {
+  RULES.forEach(r => { if (r.type === 'bool') { if (rnd() < .3) R[r.key] = !R[r.key]; } else { const st = r.step || 1; R[r.key] = Math.round((r.min + rnd() * (r.max - r.min)) / st) * st; if (st < 1) R[r.key] = +R[r.key].toFixed(1); } r.sync(); });
+  const w = $('tankWrap'); w.classList.remove('glitch'); void w.offsetWidth; w.classList.add('glitch'); blipBudget = 3; blip('hatch');
+};
+$('reset').onclick = () => { RULES.forEach(r => { R[r.key] = r.v; r.sync(); }); seedReef(); };
+
+// ---------- loop ----------
+let playing = true, speed = 1, acc = 0, prev = performance.now();
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TPS = reduce ? 5 : 9;
+$('play').onclick = () => { playing = !playing; $('play').textContent = playing ? '❚❚ Pause' : '▶ Play'; $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play'); };
+$('step').onclick = () => { step(); draw(); };
+$('speed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; $('speed').textContent = `Speed ${speed}×`; };
+function frame(now) {
+  const dt = Math.min(250, now - prev); prev = now;
+  if (playing) { acc += dt; const per = 1000 / (TPS * speed); let n = 0; blipBudget = Math.min(blipBudget + 1, 4);
+    while (acc >= per && n < 6) { step(); acc -= per; n++; } if (n) draw(); if (n >= 6) acc = 0; }
+  requestAnimationFrame(frame);
+}
+buildSprites(); alloc(); seedReef(); requestAnimationFrame(frame);
+// small read-only hook for automated tests
+window.reef = {stats: () => ({tick, ...last, cols: COLS, rows: ROWS}), rules: R, get playing() { return playing; }};
+})();
+</script>
+</body>
+</html>
