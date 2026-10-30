@@ -1,0 +1,27 @@
+{
+  "inventions": [
+    {
+      "id": "2026-10-30-the-pixel-reef",
+      "date": "2026-10-30",
+      "title": "The Pixel Reef",
+      "category": "retro",
+      "tags": [
+        "cellular-automata",
+        "pixels",
+        "fish",
+        "rules",
+        "8-bit"
+      ],
+      "ideaId": "automaton-aquarium",
+      "blurb": "An 8-bit aquarium where every fish, frond and bubble follows a rule you can rewrite while it runs.",
+      "link": "http://localhost:4173/inventions/2026-10-30-the-pixel-reef/",
+      "path": "/workspace/projects/surprise-inventor/gallery/inventions/2026-10-30-the-pixel-reef",
+      "screenshot": "/workspace/projects/surprise-inventor/gallery/inventions/2026-10-30-the-pixel-reef/shots/mobile-390.png",
+      "status": "revealed",
+      "revealedAt": "2026-10-30T16:45:46.173Z",
+      "reveal": "This week's surprise is The Pixel Reef: an 8-bit aquarium where every fish, frond and bubble obeys a line in an on-screen rulebook, and you can rewrite those rules while it runs. Feed the fish, plant kelp, build bubble vents, or hit Glitch rules and see whether the reef survives its new laws of physics. Try this first: tap the tank to drop food and watch them chase it.",
+      "rating": null,
+      "feedback": null
+    }
+  ]
+}

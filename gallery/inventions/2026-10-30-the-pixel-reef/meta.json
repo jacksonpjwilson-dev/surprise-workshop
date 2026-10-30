@@ -1,0 +1,17 @@
+{
+  "id": "2026-10-30-the-pixel-reef",
+  "title": "The Pixel Reef",
+  "date": "2026-10-30",
+  "category": "retro",
+  "tags": [
+    "cellular-automata",
+    "pixels",
+    "fish",
+    "rules",
+    "8-bit"
+  ],
+  "ideaId": "automaton-aquarium",
+  "blurb": "An 8-bit aquarium where every fish, frond and bubble follows a rule you can rewrite while it runs.",
+  "controls": "Tap or drag the tank to paint food, fish, kelp seeds, sand, rock or vents; edit the rulebook sliders live; Glitch scrambles every rule.",
+  "status": "revealed"
+}

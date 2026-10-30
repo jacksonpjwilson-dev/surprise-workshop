@@ -1,0 +1,20 @@
+{
+  "name": "surprise-inventor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Weekly autonomous surprise inventions: backlog rotation, build checks, history, feedback and a static gallery.",
+  "scripts": {
+    "pick": "node scripts/pick.js",
+    "new": "node scripts/new.js",
+    "check": "node scripts/check.js",
+    "reveal": "node scripts/add-to-history.js",
+    "feedback": "node scripts/feedback.js",
+    "gallery": "node scripts/build-gallery.js",
+    "validate": "node scripts/validate.js",
+    "preview": "node scripts/preview.js",
+    "test": "node scripts/test-foundation.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.0"
+  }
+}
